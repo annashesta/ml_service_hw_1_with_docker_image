@@ -1,33 +1,35 @@
-# Базовый образ
-FROM python:3.12-slim
+# Этап 1: Загрузка LFS-файлов
+FROM alpine/git AS lfs
+RUN apk add --no-cache git-lfs
+WORKDIR /repo
+RUN git clone --branch main --depth 1 https://github.com/your-username/mts25_mlops_hw1_fraud_detector_lecture.git .
+RUN git lfs install && git lfs pull
 
-# Создание и настройка рабочей директории
+# Этап 2: Основной образ
+FROM python:3.12-slim
 WORKDIR /app
 
-# Создание директорий
-RUN mkdir -p /app/input /app/output /app/model /app/src /app/logs /app/train_data && \
-    useradd -m appuser && \
-    chown -R appuser:appuser /app
+# Копируем LFS-файлы из первого этапа
+COPY --from=lfs /repo/model/catboost_model.cbm /app/model/
+COPY --from=lfs /repo/model/threshold.json /app/model/
+COPY --from=lfs /repo/train_data/train.csv /app/train_data/
+COPY --from=lfs /repo/model/categorical_features.json /app/model/
 
-# Установка зависимостей (копируем отдельно для лучшего кэширования)
+# Копируем остальные файлы напрямую
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
-    rm -rf /root/.cache /var/lib/apt/lists/*
-
-# Копирование остальных файлов
-COPY model/catboost_model.cbm /app/model/
-COPY model/threshold.json /app/model/
-COPY train_data/train.csv /app/train_data/
-COPY model/categorical_features.json /app/model/
-COPY config.yaml /app/config.yaml
+COPY config.yaml .
 COPY src/ /app/src/
 COPY app/app.py /app/app.py
 
-# Настройка прав доступа
-RUN chmod -R 755 /app/logs
+# Установка зависимостей
+RUN pip install --no-cache-dir -r requirements.txt && \
+    rm -rf /root/.cache
 
-# Переключаемся на непривилегированного пользователя
+# Настройка прав
+RUN mkdir -p /app/input /app/output /app/logs && \
+    useradd -m appuser && \
+    chown -R appuser:appuser /app && \
+    chmod -R 755 /app/logs
+
 USER appuser
-
-# Команда для запуска сервиса с использованием JSON-синтаксиса
 CMD ["python", "app.py"]
