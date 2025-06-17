@@ -2,7 +2,7 @@
 FROM alpine/git AS lfs
 RUN apk add --no-cache git-lfs
 WORKDIR /repo
-RUN git clone --branch main --depth 1 https://github.com/your-username/mts25_mlops_hw1_fraud_detector_lecture.git .
+RUN git clone --branch main --depth 1 https://github.com/annashesta/mts25_mlops_hw1_fraud_detector.git .
 RUN git lfs install && git lfs pull
 
 # Этап 2: Основной образ
