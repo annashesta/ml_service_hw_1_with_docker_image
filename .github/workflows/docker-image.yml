@@ -40,4 +40,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/mts25_mlops_hw1_fraud_detector_lecture:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/ml_service_hw_1_with_docker_image:latest
